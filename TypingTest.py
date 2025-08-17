@@ -50,7 +50,7 @@ class TypingTest:
             self.handleMenuInput(key)
         elif (self.gameMode == gameMode.GameMode.PLAYING):
             self.handleGameplayInput(key)
-        elif (self.gameState == 'postGameAnalysis'):
+        elif (self.gameState == 'postGame'):
             self.handlePostGameInput(key)
 
     def handleMenuInput(self, key):
@@ -114,14 +114,18 @@ class TypingTest:
         gs.wpm = round(gs.wordCount / (gs.secondsElapsed / 60))
 
         if ("".join(gs.playerText) == gs.targetText):
-            # Player finished a sentence
-            gs.updateSentence()
+            if (len(gs.remainingSentences) == 0):
+                # The player finished all sentences
+                self.gameMode = gameMode.GameMode.MENU
+                self.menuState = menuState.MenuState('postGame')
+                self.stdscr.nodelay(False)
+            else:
+                # Player finished a sentence
+                gs.updateSentence()
 
-        if (len(gs.remainingSentences) == 0):
-            # The player finished all sentences
-            self.gameMode = gameMode.GameMode.MENU
-            self.menuState = menuState.MenuState('postGame')
-            self.stdscr.nodelay(False)
+    def handlePostGameInput(self, key):
+        # Whenever any key pressed on post-game page we should just load the main menu
+        self.menuState = menuState.MenuState('main')
 
     def renderMainMenu(self):
         self.stdscr.clear()
@@ -134,16 +138,14 @@ class TypingTest:
             else:
                 self.stdscr.addstr(index + 2, 1, optionText)
     
-    def renderPostGameScreen(self, wpm, secondsElapsed, mistakeCount):
+    def renderPostGameScreen(self):
+        gs = self.gameState
         self.stdscr.clear()
         self.stdscr.addstr(0, 0, "Post game analysis!\n", curses.color_pair(1))
-        self.stdscr.addstr(2, 0, f"Words per minute: {wpm}")
-        self.stdscr.addstr(3, 0, f"Time elapsed: {round(secondsElapsed)}s")
-        self.stdscr.addstr(4, 0, f"Mistakes made: {mistakeCount}")
+        self.stdscr.addstr(2, 0, f"Words per minute: {gs.wpm}")
+        self.stdscr.addstr(3, 0, f"Time elapsed: {round(gs.secondsElapsed)}s")
+        self.stdscr.addstr(4, 0, f"Mistakes made: {gs.mistakeCount}")
         self.stdscr.addstr(8, 0, f"Press any key to return to the main menu...")
-        self.stdscr.getkey()
-        self.stdscr.refresh()
-        self.displayMainMenu()
 
     def renderGameplayScreen(self):
         gs = self.gameState
